@@ -119,7 +119,51 @@ Respond ONLY with a valid JSON object (no markdown, no code fences):
   }
 }
 
-// ── Predictive insights for dashboard ────────────────────────────────────────
+// ── AI Title & Description Generator ─────────────────────────────────────────
+
+export async function generateIssueTitleAndDescription(aiAnalysis: {
+  detectedCategory: string
+  description: string
+  tags: string[]
+  suggestedPriority: string
+}, address: string): Promise<{ title: string; description: string }> {
+  const prompt = `You are helping a citizen report a civic infrastructure issue in India.
+
+Based on this AI analysis of their uploaded photo:
+- Category: ${aiAnalysis.detectedCategory.replace('_', ' ')}
+- AI Description: ${aiAnalysis.description}
+- Tags: ${aiAnalysis.tags.join(', ')}
+- Priority: ${aiAnalysis.suggestedPriority}
+- Location: ${address || 'unknown location'}
+
+Generate a concise, clear issue report. Respond with ONLY a JSON object (no markdown):
+{
+  "title": "Short specific title under 60 chars, e.g. 'Large pothole on Rajpur Road near clock tower'",
+  "description": "2-3 sentence description explaining the issue, its impact on citizens, and urgency. Be specific and factual."
+}`
+
+  const completion = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [
+      { role: 'system', content: 'You are a civic report writer. Respond only with valid JSON.' },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.4,
+    max_tokens: 300,
+  })
+
+  const raw = completion.choices[0]?.message?.content ?? ''
+  const clean = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/i, '').trim()
+
+  try {
+    return JSON.parse(clean) as { title: string; description: string }
+  } catch {
+    return {
+      title: `${aiAnalysis.detectedCategory.replace('_', ' ')} reported`,
+      description: aiAnalysis.description,
+    }
+  }
+}
 
 export async function generateInsightGroq(issues: { category: string; count: number }[]): Promise<string> {
   const completion = await groq.chat.completions.create({

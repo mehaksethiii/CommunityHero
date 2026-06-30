@@ -5,7 +5,7 @@ export default function Navbar() {
   const { user, logout } = useAuthStore()
 
   return (
-    <header className="bg-white/90 backdrop-blur-sm border-b border-gray-100 px-6 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
+    <header className="bg-white/70 backdrop-blur-md border-b border-green-100/60 px-6 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
       <div className="md:hidden text-lg font-bold">
         <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Community</span>
         <span className="text-gray-800"> Hero</span>

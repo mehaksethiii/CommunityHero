@@ -33,7 +33,7 @@ export default function IssueCard({ issue, onClick }: Props) {
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm border border-gray-100 border-l-4 ${priorityBorder[issue.priority]} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden`}
+      className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/60 border-l-4 ${priorityBorder[issue.priority]} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden`}
       onClick={onClick}
     >
       <div className="p-5">

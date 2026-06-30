@@ -13,7 +13,7 @@ const nav = [
 
 export default function Sidebar() {
   return (
-    <aside className="hidden md:flex flex-col w-60 bg-white border-r border-gray-100 py-6 px-3 shadow-sm">
+    <aside className="hidden md:flex flex-col w-60 bg-white/70 backdrop-blur-md border-r border-green-100/60 py-6 px-3 shadow-sm relative z-10">
       <div className="mb-8 px-3 flex items-center gap-3">
         <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
           <span className="text-lg">🏙️</span>
