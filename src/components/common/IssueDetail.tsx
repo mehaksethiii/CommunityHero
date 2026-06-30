@@ -1,4 +1,4 @@
-import { X, MapPin, ThumbsUp, CheckCircle, Calendar, Sparkles, Phone, Clock, Copy, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, MapPin, ThumbsUp, CheckCircle, Calendar, Sparkles, Phone, Clock, Copy, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import type { Issue, IssueCategory } from '@/types'
@@ -6,21 +6,14 @@ import { useAuthStore } from '@/store/authStore'
 import { useIssueStore } from '@/store/issueStore'
 import { CategoryBadge, StatusBadge } from './CategoryBadge'
 import toast from 'react-hot-toast'
+import { generateResolutionPlan, type ResolutionPlan } from '@/lib/groq'
 
 interface Props {
   issue: Issue
   onClose: () => void
 }
 
-interface ResolutionPlan {
-  department: string
-  contactNumber: string
-  estimatedDays: string
-  steps: string[]
-  complaintLetter: string
-}
-
-// Static fallback plans per category — always works without API
+// Static fallback plans per category — works without API
 const staticPlans: Record<IssueCategory, ResolutionPlan> = {
   pothole: {
     department: 'Municipal Corporation / PWD (Public Works Department)',
@@ -112,17 +105,32 @@ export default function IssueDetail({ issue, onClose }: Props) {
   const { user } = useAuthStore()
   const { upvoteIssue, verifyIssue, updateStatus } = useIssueStore()
   const [plan, setPlan] = useState<ResolutionPlan | null>(null)
+  const [loadingPlan, setLoadingPlan] = useState(false)
   const [showLetter, setShowLetter] = useState(false)
 
   const hasUpvoted = user ? issue.upvotes.includes(user.uid) : false
   const hasVerified = user ? issue.verifications.includes(user.uid) : false
 
-  const handleGetPlan = () => {
-    // Use static plan — always works
-    const staticPlan = staticPlans[issue.category]
-    // Personalize the letter with actual address
-    const personalizedLetter = staticPlan.complaintLetter.replace("at ''", `at ${issue.address}`)
-    setPlan({ ...staticPlan, complaintLetter: personalizedLetter })
+  const handleGetPlan = async () => {
+    setLoadingPlan(true)
+    try {
+      // Try Groq first, fallback to static
+      const result = await generateResolutionPlan({
+        title: issue.title,
+        category: issue.category,
+        description: issue.description,
+        address: issue.address,
+        priority: issue.priority,
+      })
+      setPlan(result)
+    } catch {
+      // Groq failed — use static plan
+      const staticPlan = staticPlans[issue.category]
+      const personalizedLetter = staticPlan.complaintLetter.replace("at ''", `at ${issue.address}`)
+      setPlan({ ...staticPlan, complaintLetter: personalizedLetter })
+    } finally {
+      setLoadingPlan(false)
+    }
   }
 
   const copyLetter = () => {
@@ -216,9 +224,13 @@ export default function IssueDetail({ issue, onClose }: Props) {
             {!plan ? (
               <button
                 onClick={handleGetPlan}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors"
+                disabled={loadingPlan}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors disabled:opacity-60"
               >
-                <Sparkles className="w-4 h-4" /> Get AI Resolution Plan
+                {loadingPlan
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating AI Plan...</>
+                  : <><Sparkles className="w-4 h-4" /> Get AI Resolution Plan</>
+                }
               </button>
             ) : (
               <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">

@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { useIssueStore } from '@/store/issueStore'
 import { generateIssueSummary } from '@/lib/gemini'
+import { generateInsightGroq } from '@/lib/groq'
 import { Loader2, Sparkles } from 'lucide-react'
 
 const PIE_COLORS = ['#ef4444', '#3b82f6', '#f59e0b', '#22c55e', '#6b7280', '#10b981', '#8b5cf6']
@@ -52,8 +53,14 @@ export default function DashboardPage() {
     setLoadingInsight(true)
     try {
       const data = categoryData.map((c) => ({ category: c.name, count: c.value }))
-      const text = await generateIssueSummary(data)
-      setInsight(text)
+      // Try Groq first, fallback to Gemini
+      try {
+        const text = await generateInsightGroq(data)
+        setInsight(text)
+      } catch {
+        const text = await generateIssueSummary(data)
+        setInsight(text)
+      }
     } finally {
       setLoadingInsight(false)
     }
